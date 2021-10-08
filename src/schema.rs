@@ -1,5 +1,5 @@
 table! {
-    sample (id) {
+    samples (id) {
         id -> Int4,
         name -> Varchar,
         timestamp -> Timestamptz,

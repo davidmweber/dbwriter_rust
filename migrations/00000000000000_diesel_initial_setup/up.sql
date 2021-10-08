@@ -3,7 +3,7 @@
 -- changes will be added to existing projects as new migrations.
 
 
-CREATE TABLE sample (
+CREATE TABLE samples (
     id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL, 
     timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
