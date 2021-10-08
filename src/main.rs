@@ -7,19 +7,18 @@ extern crate diesel;
 //
 pub mod schema;
 use schema::sample;
-// use schema::sample::dsl::sample;
+//use schema::sample::dsl::sample;
 use diesel::pg::PgConnection;
-// use diesel::prelude::*;
+use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 use diesel::{Connection, RunQueryDsl};
 
-#[derive(Insertable)]
+#[derive(Debug, Insertable)]
 #[table_name = "sample"]
 pub struct AddSample<'a> {
     name: &'a str,
     timestamp: Option<&'a str>,
-    // I really don't know what &'a means in this context
     v0: &'a Option<&'a f64>,
     v1: &'a Option<&'a f64>,
 }
