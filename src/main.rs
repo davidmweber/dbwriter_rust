@@ -1,27 +1,25 @@
 
 #[macro_use]
 extern crate diesel;
-// #[macro_use]
-// extern crate serde_derive;
-// extern crate serde_json;
-//
+extern crate chrono;
+
 pub mod schema;
 use schema::sample;
-//use schema::sample::dsl::sample;
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
 use diesel::{Connection, RunQueryDsl};
+use chrono::prelude::*;
 
 #[derive(Debug, Insertable)]
 #[table_name = "sample"]
-pub struct AddSample<'a> {
+pub struct AddSample<'a > {
     name: &'a str,
-    timestamp: Option<&'a str>,
-    v0: &'a Option<&'a f64>,
-    v1: &'a Option<&'a f64>,
+    timestamp: NaiveDateTime,
+    v0: f32,
+    v1: f32,
 }
+
 
 fn main() {
     dotenv().ok();
@@ -31,9 +29,9 @@ fn main() {
     for i in 0..10 {
         let record = AddSample {
             name: "floof",
-            timestamp: None,
-            v0: &Some(&(i as f64)),
-            v1: &Some(&((2 * i) as f64))
+            timestamp: Utc::now().naive_utc(),
+            v0: i as f32,
+            v1: (2 * i) as f32
         };
         let inserts = diesel::insert_into(sample::dsl::sample)
             .values(record)
