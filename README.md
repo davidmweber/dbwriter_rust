@@ -27,7 +27,7 @@ The database first migration strategy works very well
 # The not so good
 - Diesel is not fundamentally synchronous because it relies on a thread pool for database access. I feel this is a manageable
   oversight but given Rust's excellent async options, I think they could do better. The so called async wrappers
-  are just thunking down to the thread pool anyway so it is really just sugar.
+  are just thunking down to the thread pool, so it is really just sugar.
 
 # The painful parts
 - Rust is mighty picky about references and types and it is actually hard to figure out what to do in various places

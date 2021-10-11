@@ -4,7 +4,7 @@
 
 
 CREATE TABLE samples (
-    id SERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     name VARCHAR NOT NULL, 
     timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     v0 REAL, 
