@@ -7,11 +7,13 @@ use std::env;
 use dotenv::dotenv;
 
 use actix_web::{get, post, App, HttpServer, web, HttpResponse, Error};
+use actix_web::error::BlockingError;
 use chrono::prelude::*;
 use diesel::prelude::*;
 use diesel::{QueryDsl, r2d2};
 use diesel::pg::PgConnection;
 use diesel::r2d2::ConnectionManager;
+use diesel::result::Error::NotFound;
 use serde::{Deserialize, Serialize};
 use schema::samples;
 
@@ -45,14 +47,24 @@ async fn get_samples(pool: web::Data<DbPool>) -> &'static str {
 async fn get_sample(pool: web::Data<DbPool>, sample_id: web::Path<i64>)  -> Result<HttpResponse, Error> {
     use schema::samples::dsl::*;
     let s_id = sample_id.into_inner();
-    let conn = pool.get().expect("Could not get a database connection from the pool");
+    let conn = match pool.get() {
+        Ok(c) => c,
+        Err(e) => return Ok(HttpResponse::InternalServerError().body(format!("Failed to get a database connection: {}", e)))
+    };
 
-    // TODO: Wrap this i a web::block() thingy
-    let s = samples.filter(id.eq(&s_id))
-        .first::<Sample>(&conn);
+    // Shunt this to a thread pool so it does not block here.
+    let s =  web::block(move || {
+        samples.filter(id.eq(&s_id)).first::<Sample>(&conn)
+    }).await;
+
+    // The Result we get from the block operation wraps the original error in a blocking
+    // error so we check first if the operation was cancelled. If not, we dig the original
+    // error out and deal with it
     match s {
-        Ok(r) => Ok(HttpResponse::Ok().json(s)),
-        Err(e) => Ok(HttpResponse::NotFound().body(format!("User not found {}", s_id)))
+        Ok(r) => Ok(HttpResponse::Ok().json(r)),
+        BlockingError::Canceled() => Ok(HttpResponse::InternalServerError().body("Database request cancelled on blocking")),
+        BlockingError::Error(NotFound) => Ok(HttpResponse::NotFound().body(format ! ("Sample not found {}", s_id))),
+        BlockingError::Error(e) => Ok(HttpResponse::InternalServerError().body(format ! ("Unknown database error {}", e)))
     }
 }
 
@@ -77,10 +89,11 @@ async fn main() -> std::io::Result<()> {
     for i in 0..10 {
         let conn = pool.get().unwrap(); // Grab a separate connection for each iteration
         let record = Sample {
+            id: i,
             name: String::from("frobnicator_manifold_pressure"),
             timestamp: Utc::now().naive_utc(),
-            v0: i as f32,
-            v1: (2 * i) as f32,
+            v0: Some(i as f32),
+            v1:Some((2 * i) as f32),
         };
         let res = diesel::insert_into(samples::dsl::samples)
             .values(record)
