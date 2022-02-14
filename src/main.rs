@@ -7,7 +7,7 @@ use dotenv::dotenv;
 use std::env;
 
 use actix_web::rt::blocking::BlockingError;
-use actix_web::{get, post, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{get, web, App, Error, HttpResponse, HttpServer, ResponseError};
 use chrono::prelude::*;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -39,7 +39,7 @@ async fn hello() -> &'static str {
 
 /// Returns all the samples in the database
 #[get("/samples")]
-async fn get_samples(pool: web::Data<DbPool>) -> &'static str {
+async fn get_samples(_pool: web::Data<DbPool>) -> &'static str {
     "bla"
 }
 
@@ -53,15 +53,15 @@ async fn get_sample(
     let conn = match pool.get() {
         Ok(c) => c,
         Err(e) => {
+            println!("Error making a connection to the database");
             return Ok(HttpResponse::InternalServerError()
-                .body(format!("Failed to get a database connection: {}", e)))
+                .body(format!("Failed to get a database connection: {}", e)));
         }
     };
 
     // Shunt this to a thread pool so it does not block here.
-    let s = web::block(move || samples.filter(id.eq(&s_id)).first::<Sample>(&conn))
-        .await;
-//        .map_err(|e| HttpResponse::InternalServerError().finish())?;
+    let s = web::block(move || samples.filter(id.eq(&s_id)).first::<Sample>(&conn)).await;
+    //        .map_err(|e| HttpResponse::InternalServerError().finish())?;
 
     // The Result we get from the block operation wraps the original error in a blocking
     // error so we check first if the operation was cancelled. If not, we dig the original
@@ -69,6 +69,7 @@ async fn get_sample(
     match s {
         Ok(r) => Ok(HttpResponse::Ok().json(r)),
         Err(e) => {
+            println!("Error from db");
             match e {
                 // I suspect there is a more elegant way
                 BlockingError::Canceled => Ok(HttpResponse::InternalServerError()
@@ -83,10 +84,10 @@ async fn get_sample(
     }
 }
 
-#[post("/sample")]
-async fn write_samples(pool: web::Data<DbPool>, form: web::Json<Sample>) -> &'static str {
-    "bla"
-}
+// #[post("/sample")]
+// async fn write_samples(pool: web::Data<DbPool>, form: web::Json<Sample>) -> &'static str {
+//     "bla"
+// }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -100,9 +101,12 @@ async fn main() -> std::io::Result<()> {
         .build(manager)
         .expect(&format!("Error connecting to database"));
 
+    // Drop any existing data
+    let conn = pool.get().unwrap(); // Grab a separate connection for each iteration
+    let _ = diesel::delete(samples::dsl::samples).execute(&conn);
+
     // Put some stuff into our database
     for i in 0..10 {
-        let conn = pool.get().unwrap(); // Grab a separate connection for each iteration
         let record = Sample {
             id: i,
             name: String::from("frobnicator_manifold_pressure"),

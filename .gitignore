@@ -1,3 +1,5 @@
 /target
 .vscode/
 .idea/
+perf.data*
+flamegraph.svg

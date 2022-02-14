@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-diesel = { version = "1.4.5", features = ["postgres", "chrono", "r2d2"] }
+diesel = { version = "1.4.8", features = ["postgres", "chrono", "r2d2"] }
 dotenv = "0.15.0"
 serde = "1.0"
 serde_derive = "1.0"
@@ -15,3 +15,12 @@ env_logger = "0.8"
 
 [dev-dependencies]
 actix-rt = "1"
+
+# Needed to get debug symbols in the flamegraph
+[profile.release]
+debug = 1
+
+# Linker arguments to get flamegraphs and perf to work properlu
+[target.x86_64-unknown-linux-gnu]
+linker = "/usr/bin/clang"
+rustflags = ["-Clink-arg=-fuse-ld=lld", "-Clink-arg=-Wl,--no-rosegment"]
