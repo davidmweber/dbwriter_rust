@@ -6,23 +6,21 @@ mod schema;
 use dotenv::dotenv;
 use std::env;
 
-use actix_web::rt::blocking::BlockingError;
-use actix_web::{get, web, App, Error, HttpResponse, HttpServer, ResponseError};
+use serde::{Deserialize, Serialize};
+use actix_web::{get, web, App, Error, HttpResponse, HttpServer};
 use chrono::prelude::*;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
-use diesel::result::Error::NotFound;
 use diesel::{r2d2, QueryDsl};
 use schema::samples;
-use serde::{Deserialize, Serialize};
 
 type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 /// Our database model. It does everything through the traits it derives
 /// so it is super easy to serialize, query etc
 #[derive(Insertable, Queryable, Serialize, Deserialize, Clone)]
-#[table_name = "samples"]
+//#[table_name = "samples"]
 pub struct Sample {
     id: i64,
     name: String,
@@ -43,44 +41,35 @@ async fn get_samples(_pool: web::Data<DbPool>) -> &'static str {
     "bla"
 }
 
+type DbError = Box<dyn std::error::Error + Send + Sync>;
+
+fn find_sample_by_id(sample_id: i64, conn: &PgConnection) -> Result<Option<Sample>, DbError> {
+    use schema::samples::dsl::*;
+    let s = samples
+        .filter(id.eq(&sample_id))
+        .first::<Sample>(conn)
+        .optional()?;
+    Ok(s)
+}
+
 #[get("/samples/{sample_id}")]
 async fn get_sample(
     pool: web::Data<DbPool>,
     sample_id: web::Path<i64>,
 ) -> Result<HttpResponse, Error> {
-    use schema::samples::dsl::*;
     let s_id = sample_id.into_inner();
-    let conn = match pool.get() {
-        Ok(c) => c,
-        Err(e) => {
-            println!("Error making a connection to the database");
-            return Ok(HttpResponse::InternalServerError()
-                .body(format!("Failed to get a database connection: {}", e)));
-        }
-    };
 
     // Shunt this to a thread pool so it does not block here.
-    let s = web::block(move || samples.filter(id.eq(&s_id)).first::<Sample>(&conn)).await;
-    //        .map_err(|e| HttpResponse::InternalServerError().finish())?;
-
-    // The Result we get from the block operation wraps the original error in a blocking
-    // error so we check first if the operation was cancelled. If not, we dig the original
-    // error out and deal with it
-    match s {
-        Ok(r) => Ok(HttpResponse::Ok().json(r)),
-        Err(e) => {
-            println!("Error from db");
-            match e {
-                // I suspect there is a more elegant way
-                BlockingError::Canceled => Ok(HttpResponse::InternalServerError()
-                    .body("Database request cancelled on blocking")),
-                BlockingError::Error(NotFound) => {
-                    Ok(HttpResponse::NotFound().body(format!("Sample not found {}", s_id)))
-                }
-                BlockingError::Error(e) => Ok(HttpResponse::InternalServerError()
-                    .body(format!("Unknown database error {}", e))),
-            }
-        }
+    let s = web::block(move || {
+        let conn = pool.get()?;
+        find_sample_by_id(s_id, &conn)
+    }).await?.map_err(actix_web::error::ErrorInternalServerError)?;
+    if let Some(s) = s {
+        Ok(HttpResponse::Ok().json(s))
+    } else {
+        let res = HttpResponse::NotFound()
+            .body(format!("No sample found with id: {}", s_id));
+        Ok(res)
     }
 }
 
@@ -125,7 +114,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         // This is a lambda function with zero arguments
         App::new()
-            .data(pool.clone())
+            .app_data(web::Data::new(pool.clone()))
             .service(hello)
             .service(get_samples)
             .service(get_sample)
