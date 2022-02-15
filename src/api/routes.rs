@@ -45,7 +45,7 @@ pub async fn del_sample(
         let conn = pool.get()?;
         dao::delete_sample(&conn, s_id)
     }).await?.map_err(actix_web::error::ErrorInternalServerError)?;
-    return Ok(HttpResponse::Ok().finish());
+    Ok(HttpResponse::Ok().finish())
 }
 
 

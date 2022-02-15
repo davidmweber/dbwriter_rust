@@ -8,9 +8,6 @@ mod db;
 use actix_web::{web, App, HttpServer};
 use api::*;
 use chrono::prelude::*;
-use diesel::pg::PgConnection;
-use diesel::r2d2;
-use diesel::r2d2::ConnectionManager;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -18,12 +15,7 @@ async fn main() -> std::io::Result<()> {
 
     // Set up a connection pool to the database
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(db_url);
-    let pool = r2d2::Pool::builder()
-        .max_size(12)
-        .build(manager)
-        .unwrap_or_else(|_| panic!("Error connecting to database"));
-
+    let pool = db::get_db_pool(db_url);
     // Drop any existing data and set up some sample data
     {
         let conn = pool.get().unwrap(); // Grab a separate connection for each iteration
