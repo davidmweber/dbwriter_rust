@@ -9,7 +9,6 @@ use actix_web::{web, App, HttpServer};
 use api::*;
 use chrono::prelude::*;
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
 use diesel::r2d2;
 use diesel::r2d2::ConnectionManager;
 
@@ -25,30 +24,27 @@ async fn main() -> std::io::Result<()> {
         .build(manager)
         .unwrap_or_else(|_| panic!("Error connecting to database"));
 
-    // Drop any existing data
-    let conn = pool.get().unwrap(); // Grab a separate connection for each iteration
-    let _ = diesel::delete(db::schema::samples::dsl::samples).execute(&conn);
+    // Drop any existing data and set up some sample data
+    {
+        let conn = pool.get().unwrap(); // Grab a separate connection for each iteration
+        db::dao::delete_all_samples(&conn);
 
-    // Put some stuff into our database
-    for i in 0..10 {
-        let record = models::Sample {
-            id: i,
-            name: String::from("frobnicator_manifold_pressure"),
-            timestamp: Utc::now().naive_utc(),
-            v0: Some(i as f32),
-            v1: Some((2 * i) as f32),
-        };
-        let res = diesel::insert_into(db::schema::samples::dsl::samples)
-            .values(record)
-            .execute(&conn);
-        assert_eq!(res, Ok(1)); // Will be Err(something) if there was a problem
+        // Put some stuff into our database
+        for i in 0..10 {
+            let record = models::Sample {
+                id: i,
+                name: String::from("frobnicator_manifold_pressure"),
+                timestamp: Utc::now().naive_utc(),
+                v0: Some(i as f32),
+                v1: Some((2 * i) as f32),
+            };
+            db::dao::insert_sample(&conn, record);
+        }
     }
-    //let results = sample.ilter
-
     // Start up the HTTP server, set up the routes and and just block on its completion
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(pool.clone())) // Database dependency
             .configure(api::config_app())
     })
     .bind(("127.0.0.1", 8080))?

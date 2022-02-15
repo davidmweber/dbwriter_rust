@@ -1,4 +1,4 @@
-use actix_web::{get, web, Error, HttpResponse};
+use actix_web::{get, delete, web, Error, HttpResponse};
 use crate::db::DbPool;
 use crate::db::dao;
 
@@ -14,7 +14,7 @@ pub async fn get_samples(_pool: web::Data<DbPool>) -> &'static str {
     "bla"
 }
 
-#[get("/samples/{sample_id}")]
+#[get("/sample/{sample_id}")]
 pub async fn get_sample(
     pool: web::Data<DbPool>,
     sample_id: web::Path<i64>,
@@ -24,7 +24,7 @@ pub async fn get_sample(
     // Shunt this to a thread pool so it does not block here.
     let s = web::block(move || {
         let conn = pool.get()?;
-        dao::find_sample_by_id(s_id, &conn)
+        dao::find_sample_by_id(&conn, s_id)
     }).await?.map_err(actix_web::error::ErrorInternalServerError)?;
     if let Some(s) = s {
         Ok(HttpResponse::Ok().json(s))
@@ -34,6 +34,20 @@ pub async fn get_sample(
         Ok(res)
     }
 }
+
+#[delete("/sample/{sample_id}")]
+pub async fn del_sample(
+    pool: web::Data<DbPool>,
+    sample_id: web::Path<i64>,
+) -> Result<HttpResponse, Error> {
+    let s_id = sample_id.into_inner();
+    let _ = web::block(move || {
+        let conn = pool.get()?;
+        dao::delete_sample(&conn, s_id)
+    }).await?.map_err(actix_web::error::ErrorInternalServerError)?;
+    return Ok(HttpResponse::Ok().finish());
+}
+
 
 // #[post("/sample")]
 // pub async fn write_samples(pool: web::Data<DbPool>, form: web::Json<Sample>) -> &'static str {

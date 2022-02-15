@@ -15,10 +15,5 @@ pub struct Sample {
     pub v1: Option<f32>,
 }
 
-// #[derive(Insertable, Serialize, Deserialize, Clone)]
-// pub struct NewSample {
-//     pub name: String,
-//     pub timestamp: NaiveDateTime,
-//     pub v0: Option<f32>,
-//     pub v1: Option<f32>,
-// }
+#[derive(Serialize)]
+pub struct Success {}
