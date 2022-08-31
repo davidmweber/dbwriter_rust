@@ -18,8 +18,8 @@ async fn main() -> std::io::Result<()> {
     let pool = db::get_db_pool(db_url);
     // Drop any existing data and set up some sample data
     {
-        let conn = pool.get().unwrap(); // Grab a separate connection for each iteration
-        db::dao::delete_all_samples(&conn);
+        let conn = &mut pool.get().unwrap(); // Grab a separate connection for each iteration
+        db::dao::delete_all_samples(conn);
 
         // Put some stuff into our database
         for i in 0..10 {
@@ -30,7 +30,7 @@ async fn main() -> std::io::Result<()> {
                 v0: Some(i as f32),
                 v1: Some((2 * i) as f32),
             };
-            db::dao::insert_sample(&conn, record);
+            db::dao::insert_sample(conn, record);
         }
     }
     // Start up the HTTP server, set up the routes and and just block on its completion

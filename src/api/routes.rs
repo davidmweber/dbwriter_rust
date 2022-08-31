@@ -23,8 +23,8 @@ pub async fn get_sample(
 
     // Shunt this to a thread pool so it does not block here.
     let s = web::block(move || {
-        let conn = pool.get()?;
-        dao::find_sample_by_id(&conn, s_id)
+        let conn = &mut pool.get()?;
+        dao::find_sample_by_id(conn, s_id)
     }).await?.map_err(actix_web::error::ErrorInternalServerError)?;
     if let Some(s) = s {
         Ok(HttpResponse::Ok().json(s))
@@ -42,8 +42,8 @@ pub async fn del_sample(
 ) -> Result<HttpResponse, Error> {
     let s_id = sample_id.into_inner();
     let _ = web::block(move || {
-        let conn = pool.get()?;
-        dao::delete_sample(&conn, s_id)
+        let conn = &mut pool.get()?;
+        dao::delete_sample(conn, s_id)
     }).await?.map_err(actix_web::error::ErrorInternalServerError)?;
     Ok(HttpResponse::Ok().finish())
 }

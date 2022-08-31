@@ -9,7 +9,8 @@ on your machine. On Linux, install it using
 ```sh
 sudo apt install libpq-dev
 ```
-Now install diesel's CLI, create the database and run the migration:
+Now install diesel's CLI, create the database and run the migration noting that you may have to grant
+your user access to the `dbwriter_rust` database:
 ```sh
 cargo install diesel_cli --no-default-features --features postgres   # Only install PostgreSQL components
 # This is only needed if the database user specified in the env variable cannot create a database
