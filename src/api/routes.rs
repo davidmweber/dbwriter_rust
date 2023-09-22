@@ -36,10 +36,7 @@ pub async fn get_sample(
 }
 
 #[delete("/sample/{sample_id}")]
-pub async fn del_sample(
-    pool: web::Data<DbPool>,
-    sample_id: web::Path<i64>,
-) -> Result<HttpResponse, Error> {
+pub async fn del_sample(pool: web::Data<DbPool>, sample_id: web::Path<i64>) -> Result<HttpResponse, Error> {
     let s_id = sample_id.into_inner();
     let _ = web::block(move || {
         let conn = &mut pool.get()?;
