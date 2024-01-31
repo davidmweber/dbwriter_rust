@@ -4,7 +4,7 @@ A basic modularised demo of a Rust language based API using [actix-web](https://
 
 ## Setup
 Ensure you have installed [Rust](https://www.rust-lang.org/tools/install) and have a working PostgreSQL
-instance running on your machine. Now make sure that there is a copy of libpq (the PostgreSQL driver library)
+instance running on your machine. You also need a copy of libpq (the PostgreSQL driver library)
 on your machine. On Linux, install it using
 ```sh
 sudo apt install libpq-dev
@@ -19,6 +19,17 @@ echo DATABASE_URL=postgres://username:password@localhost/dbwriter_rust > .env  #
 diesel setup
 diesel migration run  # Roll the actual migration and generate a Rust schema that matches the current database schema
 ```
+
+You may have to grant the user access to the database. This can be done from the psql command line. Start `psql`
+```shell
+psql dbwriter_rust
+```
+Then execute the following SQL:
+```sql
+GRANT ALL PRIVILEGES ON DATABASE dbwriter_rust TO test;
+GRANT ALL ON SCHEMA public TO test;
+```
+
 To start the server, just type `cargo run`
 
 # Benchmarking
@@ -30,7 +41,7 @@ This will attempt 6000000 requests per second to the specified URL.
 
 Some hints for Rust: 
 - Install flamegraph ('cargo install flamegraph') for some top-notch profiling. Execute this using `cargo flamegraph`
-- You can visualise the reslting SVG flamegraph by opening the flamegraph.svb file with Chrome or Firefox.
+- You can visualise the resulting SVG flamegraph by opening the flamegraph.svb file with Chrome or Firefox.
 
 # The good 
 - The database first migration strategy works very well.
