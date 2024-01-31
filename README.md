@@ -3,9 +3,8 @@ A basic modularised demo of a Rust language based API using [actix-web](https://
 [Diesel](https://diesel.rs/). 
 
 ## Setup
-Ensure you have installed [Rust](https://www.rust-lang.org/tools/install) and have a working PostgreSQL
-instance running on your machine. Now make sure that there is a copy of libpq (the PostgreSQL driver library)
-on your machine. On Linux, install it using
+Ensure you have installed [Rust](https://www.rust-lang.org/tools/install) and have a working PostgreSQL instance with a copy of libpq 
+(the PostgreSQL driver library) on your machine. On Linux, install it using
 ```sh
 sudo apt install libpq-dev
 ```
@@ -19,7 +18,7 @@ echo DATABASE_URL=postgres://username:password@localhost/dbwriter_rust > .env  #
 diesel setup
 diesel migration run  # Roll the actual migration and generate a Rust schema that matches the current database schema
 ```
-To start the server, just type `cargo run`
+To start the server, just type `cargo run --release`
 
 # Benchmarking
 This was tested with [wrk2](git@github.com:giltene/wrk2.git). Here is an example benchmark:
@@ -35,18 +34,18 @@ Some hints for Rust:
 # The good 
 - The database first migration strategy works very well.
 - Diesel is a fully fledged ORM that is good to work with.
+- It is insanely fast at 260k requests per second on my 6/12 core machine using the above wrk command.
 
 # The not so good
-- Diesel is not (yet) fundamentally synchronous because it relies on a thread pool for database 
-  access. I feel this is a manageable oversight but given Rust's async options.
+- Diesel is not (yet) fundamentally synchronous because it relies on the standard blocking PostgreSQL driver.
+  You will need to think carefully about how you handle database requests in an async environment.
+ 
 - Actix works fine, but it is hard to gauge what types are needed. [Rocket](https://rocket.rs/) is way
-  cleaner but its maintainer has been absent for a while now.
+  cleaner and perhaps viable now that the maintainer has returned from their hiatus.
 - There are apparently no useful [OpenAPI](https://www.openapis.org/) documentation generator for Actix.
-  [Paperclip](https://github.com/paperclip-rs/paperclip) that I gave up on.
+ 
 
 # The painful parts
 - Rust is mighty picky about references and types. It is actually hard to figure out what to do in various places.
-- The IDE (Jetbrains and VSCode) have mediocre support for Rust. They appear to be blind to macros and offer little 
-  help with imports. The compiler will vomit up many errors that the IDE just misses.
 - Figuring out what type to use when mapping structs to a database schema can be tricky. The docs are not great in this
   regard.
