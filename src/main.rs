@@ -33,7 +33,7 @@ async fn main() -> std::io::Result<()> {
             db::dao::insert_sample(conn, record);
         }
     }
-    // Start up the HTTP server, set up the routes and and just block on its completion
+    // Start up the HTTP server, set up the routes and just block on its completion
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone())) // Database dependency
