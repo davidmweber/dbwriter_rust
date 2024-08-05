@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 //use diesel::prelude::*;
 use chrono::prelude::*;
 //#[macro_use]
-use db::schema::samples;
 use crate::db;
+use db::schema::samples;
 
 // Base sample model
 #[derive(Queryable, Insertable, Serialize, Deserialize, Clone)]

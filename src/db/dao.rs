@@ -1,9 +1,9 @@
+use crate::models::Success;
 use crate::{api, db};
 use api::models;
 use db::schema::samples::dsl::*;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use crate::models::Success;
 
 type DbError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -33,5 +33,5 @@ pub fn delete_sample(conn: &mut PgConnection, sample_id: i64) -> Result<Success,
     let _ = diesel::delete(db::schema::samples::dsl::samples)
         .filter(id.eq(sample_id))
         .execute(conn);
-    return Ok(Success{});
+    return Ok(Success {});
 }

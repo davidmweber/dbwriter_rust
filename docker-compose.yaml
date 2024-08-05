@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: dbwriter_rust
+
+  dbwriter:
+    image: dbwriter_rust:latest
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://test:test@db/dbwriter_rust
+      RUST_LOG: info
+      RUST_BACKTRACE: 1

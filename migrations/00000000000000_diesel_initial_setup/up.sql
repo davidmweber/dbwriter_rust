@@ -2,14 +2,6 @@
 -- and other internal bookkeeping. This file is safe to edit, any future
 -- changes will be added to existing projects as new migrations.
 
-
-CREATE TABLE samples (
-    id BIGINT PRIMARY KEY,
-    name VARCHAR NOT NULL, 
-    timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    v0 REAL, 
-    v1 REAL );
-
 -- Sets up a trigger for the given table to automatically set a column called
 -- `updated_at` whenever the row is modified (unless `updated_at` was included
 -- in the modified columns)

@@ -29,12 +29,12 @@ GRANT ALL PRIVILEGES ON DATABASE dbwriter_rust TO test;
 GRANT ALL ON SCHEMA public TO test;
 ```
 
-To start the server, just type `cargo run`
+To start the server, just type `cargo run`. To start a service
 
 # Benchmarking
 This was tested with [wrk2](git@github.com:giltene/wrk2.git). Here is an example benchmark:
 ```
-wrk -v -t4 -c200 -R600000 http://localhost:8080/samples/3
+wrk -v -t4 -c200 -R600000 `http://localhost:8080/samples/3`
 ```
 This will attempt 6000000 requests per second to the specified URL.
 
@@ -48,13 +48,12 @@ Some hints for Rust:
 - It is insanely fast at 260k requests per second on my 6/12 core machine using the above wrk command.
 
 # The not so good
-- Diesel is not (yet) fundamentally synchronous because it relies on the standard blocking PostgreSQL driver.
+- Diesel is fundamentally synchronous because it relies on the standard blocking PostgreSQL driver.
   You will need to think carefully about how you handle database requests in an async environment.
  
 - Actix works fine, but it is hard to gauge what types are needed. [Rocket](https://rocket.rs/) is way
   cleaner and perhaps viable now that the maintainer has returned from their hiatus.
 - There are apparently no useful [OpenAPI](https://www.openapis.org/) documentation generator for Actix.
- 
 
 # The painful parts
 - Rust is mighty picky about references and types. It is actually hard to figure out what to do in various places.

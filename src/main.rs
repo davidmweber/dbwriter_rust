@@ -1,13 +1,18 @@
 #[macro_use]
 extern crate diesel;
-use dotenv::dotenv;
 use std::env;
+
+use actix_web::{web, App, HttpServer};
+use chrono::prelude::*;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use dotenv::dotenv;
+
+use api::*;
+
 mod api;
 mod db;
 
-use actix_web::{web, App, HttpServer};
-use api::*;
-use chrono::prelude::*;
+const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -19,6 +24,12 @@ async fn main() -> std::io::Result<()> {
     // Drop any existing data and set up some sample data
     {
         let conn = &mut pool.get().unwrap(); // Grab a separate connection for each iteration
+
+        // By default, the output is thrown out. If you want to redirect it to stdout, you
+        // should call embedded_migrations::run_with_output.
+        conn.run_pending_migrations(MIGRATIONS).unwrap();
+        println!("Migrations complete");
+
         db::dao::delete_all_samples(conn);
 
         // Put some stuff into our database
@@ -39,7 +50,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone())) // Database dependency
             .configure(api::config_app())
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }
