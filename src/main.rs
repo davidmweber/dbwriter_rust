@@ -19,7 +19,16 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     // Set up a connection pool to the database
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db_url = match env::var("DATABASE_URL") {
+        Ok(url) => url,
+        Err(_) => {
+            let username = env::var("USERNAME").expect("USERNAME must be set in the environment");
+            let password = env::var("PASSWORD").expect("PASSWORD must be set in the environment");
+            let host = env::var("HOST").expect("HOST must be set in the environment");
+            let port = env::var("PORT").expect("PORT must be set in the environment");
+            format!("postgres://{}:{}@{}:{}/{}", username, password, host, port, "postgres")
+            }
+    };
     let pool = db::get_db_pool(db_url);
     // Drop any existing data and set up some sample data
     {
