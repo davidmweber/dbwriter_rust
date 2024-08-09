@@ -28,7 +28,6 @@ async fn main() -> std::io::Result<()> {
         let database = env::var("DATABASE").expect("DATABASE must be set in the environment");
         format!("postgres://{}:{}@{}:{}/{}", username, password, host, port, database)
     });
-    println!("Using database URL: {}", db_url);
     let pool = db::get_db_pool(db_url);
 
     // Drop any existing data and set up some sample data
