@@ -17,19 +17,20 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+    println!("DbWriter v{}", env!("CARGO_PKG_VERSION"));
 
     // Set up a connection pool to the database
-    let db_url = match env::var("DATABASE_URL") {
-        Ok(url) => url,
-        Err(_) => {
-            let username = env::var("USERNAME").expect("USERNAME must be set in the environment");
-            let password = env::var("PASSWORD").expect("PASSWORD must be set in the environment");
-            let host = env::var("HOST").expect("HOST must be set in the environment");
-            let port = env::var("PORT").expect("PORT must be set in the environment");
-            format!("postgres://{}:{}@{}:{}/{}", username, password, host, port, "postgres")
-            }
-    };
+    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
+        let username = env::var("USER").expect("USER must be set in the environment");
+        let password = env::var("PASSWORD").expect("PASSWORD must be set in the environment");
+        let host = env::var("HOST").expect("HOST must be set in the environment");
+        let port = env::var("PORT").expect("PORT must be set in the environment");
+        let database = env::var("DATABASE").expect("DATABASE must be set in the environment");
+        format!("postgres://{}:{}@{}:{}/{}", username, password, host, port, database)
+    });
+    println!("Using database URL: {}", db_url);
     let pool = db::get_db_pool(db_url);
+
     // Drop any existing data and set up some sample data
     {
         let conn = &mut pool.get().unwrap(); // Grab a separate connection for each iteration
@@ -53,6 +54,7 @@ async fn main() -> std::io::Result<()> {
             db::dao::insert_sample(conn, record);
         }
     }
+
     // Start up the HTTP server, set up the routes and just block on its completion
     HttpServer::new(move || {
         App::new()

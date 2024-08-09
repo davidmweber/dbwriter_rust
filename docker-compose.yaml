@@ -12,6 +12,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgres://test:test@db/dbwriter_rust
+      USER: test
+      PASSWORD: test
+      PORT: 5432
+      HOST: db
+      DATABASE: dbwriter_rust
+#      DATABASE_URL: postgres://test:test@db/dbwriter_rust
       RUST_LOG: info
       RUST_BACKTRACE: 1
