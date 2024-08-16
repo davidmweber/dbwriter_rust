@@ -19,13 +19,10 @@ ecr_push: ## Push the container to ECR
 	docker push $(AWS_DOCKER_REPO)/$(AWS_NAME):$(VERSION)
 	docker push $(AWS_DOCKER_REPO)/$(AWS_NAME):latest
 
-
-ecs_deploy:
-	aws ecs update-service \
-		--task-definition energy_platform-api-$(ENVIRONMENT) \
-		--cluster energy_platform-cluster-$(ENVIRONMENT) \
-		--service energy-platform-api-$(ENVIRONMENT) --force-new-deployment | jq ".service.deployments[0].rolloutState"
-
+ecs_deploy: ## Deploy the latest container to the designated ECS task
+	aws ecs update-service --profile sandbox \
+		--cluster compute-api-services \
+		--service rust-dragrace --force-new-deployment | jq ".service.deployments[0].rolloutState"
 
 clean: ## Clean the build
 	cargo clean

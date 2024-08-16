@@ -26,6 +26,7 @@ async fn main() -> std::io::Result<()> {
         let host = env::var("HOST").expect("HOST must be set in the environment");
         let port = env::var("PORT").expect("PORT must be set in the environment");
         let database = env::var("DATABASE").expect("DATABASE must be set in the environment");
+        println!("Using database postgres://{}:xxx@{}:{}/{}", username, host, port, database);
         format!("postgres://{}:{}@{}:{}/{}", username, password, host, port, database)
     });
     let pool = db::get_db_pool(db_url);
@@ -33,7 +34,6 @@ async fn main() -> std::io::Result<()> {
     // Drop any existing data and set up some sample data
     {
         let conn = &mut pool.get().unwrap(); // Grab a separate connection for each iteration
-
         // By default, the output is thrown out. If you want to redirect it to stdout, you
         // should call embedded_migrations::run_with_output.
         conn.run_pending_migrations(MIGRATIONS).unwrap();
@@ -53,14 +53,15 @@ async fn main() -> std::io::Result<()> {
             db::dao::insert_sample(conn, record);
         }
     }
-
+    println!("Initial population complete");
     // Start up the HTTP server, set up the routes and just block on its completion
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone())) // Database dependency
             .configure(api::config_app())
     })
-    .bind(("0.0.0.0", 8080))?
-    .run()
-    .await
+        .keep_alive(std::time::Duration::from_secs(75))
+        .bind(("0.0.0.0", 8080))?
+        .run()
+        .await
 }

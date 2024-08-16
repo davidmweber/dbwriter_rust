@@ -5,13 +5,20 @@ use actix_web::{delete, get, web, Error, HttpResponse};
 /// Simple return to test if the API is alive
 #[get("/")]
 pub async fn hello() -> &'static str {
+    println!("GET / called");
     "Hello world!"
 }
 
 /// Returns all the samples in the database
 #[get("/samples")]
 pub async fn get_samples(_pool: web::Data<DbPool>) -> &'static str {
-    "bla"
+    println!("GET /samples called");
+    "samples"
+}
+
+#[get("/version")]
+pub async fn get_version(_pool: web::Data<DbPool>) -> &'static str {
+    env!("CARGO_PKG_VERSION")
 }
 
 #[get("/sample/{sample_id}")]
